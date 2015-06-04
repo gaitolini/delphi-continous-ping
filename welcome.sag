@@ -1,0 +1,41 @@
+.
+echo # delphi-continous-ping >> README.md
+git init
+edit .gitignore
+git add README.txt
+git add <few files>
+git commit -m "first commit"
+git remote add origin https://github.com/sebastianet/delphi-continous-ping.git
+git push -u origin master
+.
+ say( 'pbxOnPaint()' ) ;
+
+ pbxAv.Canvas.brush.style := bsClear ;
+ pbxAv.Canvas.Font.Size   := 6 ;
+
+ for m := 0 to 60 do
+  if (m=0) or (m=15) or (m=30) or (m=45) or (m=60) then
+    pbxAv.canvas.Textout( margin+m*(dotsize+1), 1, inttostr(m) ) ; // minutes in horizontal
+
+ for h := 0 to 24 do
+   if (h=0) or (h=6) or (h=12) or (h=18) or (h=24) then
+     pbxAv.canvas.Textout( 1, margin+h*(dotsize+1), inttostr(h) ) ; // hours in vertical
+
+ pbxAv.Canvas.brush.style := bsSolid ;
+ pbxAv.Canvas.Pen.Style   := psClear ;
+
+ 
+	pbxAv.Canvas.brush.Color := clRed ;
+	pbxAv.Canvas.brush.color := clWhite ;
+
+	pbxAv.Canvas.Rectangle( margin+m*(dotsize+1), margin+h*(dotsize+1), margin-1+(m+1)*(dotsize+1), margin-1+(h+1)*(dotsize+1) ) ;
+	// upper left corner at (X1, Y1) and its lower right corner at (X2, Y2).
+
+.
+===
+ i := ord ( AReplyStatus.ReplyStatusType ) ;
+ t := system.typeinfo ( i ) ; 
+ s := typinfo.getenumname ( t ) ;
+===
+ S := typinfo.getenuname( system.typeinfo( tstatustype), ord(replystatus) );
+.
