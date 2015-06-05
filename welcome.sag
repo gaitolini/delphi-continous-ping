@@ -1,6 +1,8 @@
 .
  s'ha de poder desar i carregar en més d'un format: texte csv json xls odp etc
 .
+ github : https://github.com/sebastianet/delphi-continous-ping
+.
 echo # delphi-continous-ping >> README.md
 git init
 edit .gitignore

@@ -4,6 +4,7 @@ unit ping_continu_unit;
 // versions
 //  1.1.a 04 Juny 2015 - do ping on timeout schedule
 //  1.1.b 05 Juny 2015 - save data to file, load data from file (and display)
+//  1.1.c 05 Juny 2015 - OpenDialog to get FileName to read old data from - gracies, Pere !
 
 {$M+}
 
@@ -48,6 +49,7 @@ type
     sbPing: TStatusBar;
     btnSave2File: TButton;
     btnLoad4File: TButton;
+    opnLoadFile: TOpenDialog;
 
     procedure FormCreate(Sender: TObject);
     procedure TimerPingTimeout(Sender: TObject);
@@ -116,6 +118,14 @@ begin
 
   szFN := '150605141816.cpd' ;
 
+  if opnLoadFile.Execute then
+  begin
+//    loadFile(opnLoadFile.FileName);
+    szFN := opnLoadFile.FileName;
+  end;
+
+  debugMsg ( '>>> Load Data from File ('+ szFN + ').' ) ;
+
   if FileExists( szFN ) then begin
 
     AssignFile( fnIn, szFN );
@@ -137,7 +147,7 @@ begin
 
     CloseFile( fnIn );
 
-    debugMsg ( '+++ Input ('+ IntToStr(ho)+ ') files.' ) ;
+    debugMsg ( '+++ Input (' +IntToStr(ho)+ ') files.' ) ;
 
     pbxPing.Repaint ; // update PaintBox
 
@@ -265,7 +275,6 @@ end; // IdcmpClientStatus
 
 
 procedure TForm1.IdcmpClientReply( ASender: TComponent; const AReplyStatus: TReplyStatus );
-// Type ptypeinfo = ^ttypeinfo;
 var
   iSeqId, iBytesRcvd : integer ;
   szRspIP   : string ;

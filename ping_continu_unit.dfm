@@ -114,4 +114,9 @@ object Form1: TForm1
     Left = 696
     Top = 528
   end
+  object opnLoadFile: TOpenDialog
+    InitialDir = 'c:\Sebas\delphi\Ping_Continu\Win32\Debug'
+    Left = 696
+    Top = 584
+  end
 end
