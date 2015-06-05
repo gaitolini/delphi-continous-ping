@@ -1,17 +1,25 @@
 unit ping_continu_unit;
 
+// github : https://github.com/sebastianet/delphi-continous-ping
+// versions
+//  1.1.a 04 Juny 2015 - do ping on timeout schedule
+//  1.1.b 05 Juny 2015 - save data to file, load data from file (and display)
+
+{$M+}
+
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, System.DateUtils,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls,
   IdIcmpClient, IdBaseComponent, IdComponent, IdRawBase, IdRawClient,
+  typinfo,
   Vcl.ComCtrls ;
 
 const
 
 	ksz_Id       = 'Ping Continu' ;
-	ksz_Versio   = 'v 1.1.a, Juny 2015' ;
+	ksz_Versio   = 'v 1.1.b, 04 Juny 2015' ;
 	ksz_Autor    = 'Sebastia Altemir Gubankov' ;
 	ksz_Emilio   = 'sag@tinet.cat' ;
 
@@ -38,6 +46,8 @@ type
     pbxPing: TPaintBox;
     TimerMostrar: TTimer;
     sbPing: TStatusBar;
+    btnSave2File: TButton;
+    btnLoad4File: TButton;
 
     procedure FormCreate(Sender: TObject);
     procedure TimerPingTimeout(Sender: TObject);
@@ -48,6 +58,8 @@ type
       const AStatusText: string);
     procedure pbxPingPaint(Sender: TObject);
     procedure TimerMostrarTimeout(Sender: TObject);
+    procedure btnSave2FileClick(Sender: TObject);
+    procedure btnLoad4FileClick(Sender: TObject);
 
   private
     { Private declarations }
@@ -93,6 +105,73 @@ begin
 end; // debugMsg
 
 
+procedure TForm1.btnLoad4FileClick(Sender: TObject);
+var
+  fnIn: TextFile;
+  szFN : string ;
+  iData: integer ;
+  ho, mi : integer ;
+
+begin
+
+  szFN := '150605141816.cpd' ;
+
+  if FileExists( szFN ) then begin
+
+    AssignFile( fnIn, szFN );
+    Reset( fnIn ); // open file to read
+    ho := 0 ;
+    mi := 0 ;
+
+    while not Eof( fnIn) do
+    begin
+      ReadLn( fnIn, iData );
+      dayPings [ ho, mi ] := iData ;
+      mi := mi + 1 ;
+      if mi > 59  then begin
+        mi := 0 ;
+        ho := ho + 1 ;
+      end ;
+
+    end; // while not EOF()
+
+    CloseFile( fnIn );
+
+    debugMsg ( '+++ Input ('+ IntToStr(ho)+ ') files.' ) ;
+
+    pbxPing.Repaint ; // update PaintBox
+
+  end
+  else
+    debugMsg ( '--- Input filename ('+szFN+ ') not found.' ) ;
+
+end; // btnLoad4FileClick - load data from file - selected filename
+
+
+procedure TForm1.btnSave2FileClick(Sender: TObject);
+var
+  fOut: TextFile;
+  szFN : string ;
+  ho, mi : integer ;
+
+begin
+
+  DateTimeToString ( szFN, 'yymmddhhnnss', now ) ;
+  szFN := szFN + '.cpd' ; // Continous Ping Data
+  debugMsg ( '>>> Output Filename will be ('+szFN+ ').' ) ;
+
+  AssignFile( fOut, szFN ) ; // assign filename to file
+  Rewrite( fOut ) ;          // open file to write
+
+  for ho := 0 to 23 do
+    for mi := 0 to 59 do
+      WriteLn( fout, dayPings [ ho, mi ] ) ;
+
+  CloseFile( fOut ) ; // 4.320 char file in \\delphi\Ping_Continu\Win32\Debug
+
+end; // btnSave2FileClick - write data to file - calculated filename
+
+
 procedure TForm1.btnStartPingClick(Sender: TObject);
 var szIP : string ;
 begin
@@ -100,7 +179,7 @@ begin
   debugMsg ( 'Button Start/Stop Ping pushed.' ) ;
 
   szIP := edIP.Text ;
-  debugMsg ( 'Set IP (' + szIP + '). Timeout (' + IntToStr( TimerPing.Interval ) +') msg.' ) ;
+  debugMsg ( 'Set IP (' + szIP + '). Timeout "Ping Msg" is (' + IntToStr( TimerPing.Interval ) +') msg.' ) ;
   icmpClient.Host := szIP ;
   icmpClient.ReceiveTimeout := kTimeout_ICMP ;
 
@@ -114,9 +193,10 @@ begin
   end;
 
   TimerMostrar.Enabled := true ;
-  debugMsg ( 'Start Mostrar timer. Timeout (' + IntToStr( TimerMostrar.Interval ) +') msg.' ) ;
+  debugMsg ( 'Timeout "Display Data" is (' + IntToStr( TimerMostrar.Interval ) +') msg.' ) ;
 
-end;
+end; // btnStartPingClick
+
 
 procedure TForm1.FormCreate(Sender: TObject);
 var
@@ -181,16 +261,17 @@ begin
 
   debugMsg ( '+++ Ping() Status ('+ AStatusText + ').' ) ;
 
-  end; // IdcmpClientStatus
+end; // IdcmpClientStatus
 
 
 procedure TForm1.IdcmpClientReply( ASender: TComponent; const AReplyStatus: TReplyStatus );
+// Type ptypeinfo = ^ttypeinfo;
 var
   iSeqId, iBytesRcvd : integer ;
   szRspIP   : string ;
 
   iRepQ      : integer ;
-//  pInfo      : PTypeInfo ;
+  pInfo      : PTypeInfo ; // requires "uses typinfo"
   szEnumName : string ;
 
 begin
@@ -199,14 +280,16 @@ begin
   szRspIP     := AReplyStatus.FromIpAddress ;
 
   iRepQ      := ord( AReplyStatus.ReplyStatusType ) ;
-//  pInfo      := System.TypeInfo( TReplyStatus ) ; // returns a pointer to a TTypeInfo record.
-//  if pInfo <> nil then // There is no RTTI attached for some types like Records ...
-//  begin
-//    szEnumName := TypInfo.GetEnumName( pInfo, iRepQ ) ;
+  pInfo      := System.TypeInfo( TReplyStatus ) ; // returns a pointer to a TTypeInfo record.
+  szEnumName := '-' ; // set default value
+  if pInfo <> nil then // there is no RTTI attached for some types like Records ...
+  begin
+//    szEnumName := TypInfo.GetEnumName( pInfo, iRepQ ) ; // runtime error
+  end;
 
-// S := typinfo.getenuname( system.typeinfo( tstatustype), ord(replystatus) );
+// S := typinfo.getenuname( system.typeinfo( tstatustype), ord(replystatus) ) );
 
-  if bVerbose then debugMsg ( '+++ Ping() reply, status ordinal (' + IntToStr( iRepQ ) + ').' ) ;
+  if bVerbose then debugMsg ( '+++ Ping() reply, status (' + szEnumName + ').' ) ;
   sbPing.Panels[0].Text := TimeToStr ( now ) + '+++ Ping() reply, status ordinal (' + IntToStr( iRepQ ) + ').' ;
 
   case ( AReplyStatus.ReplyStatusType ) of  // ms-help://embarcadero.rs_xe7/Indy/IdIcmpClient_TReplyStatusTypes.html
@@ -250,7 +333,7 @@ begin
     end ;
 
 //    Canvas.Rectangle( margin+m*(dotsize+1), margin+h*(dotsize+1), margin-1+(m+1)*(dotsize+1), margin-1+(h+1)*(dotsize+1) ) ;
-    pbxPing.repaint ;
+    pbxPing.Repaint ; // update PaintBox
 
   end ; // with PaintBox
 

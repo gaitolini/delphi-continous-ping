@@ -1,4 +1,6 @@
 .
+ s'ha de poder desar i carregar en més d'un format: texte csv json xls odp etc
+.
 echo # delphi-continous-ping >> README.md
 git init
 edit .gitignore

@@ -18,17 +18,17 @@ object Form1: TForm1
     Left = 24
     Top = 75
     Width = 690
-    Height = 340
+    Height = 302
     OnPaint = pbxPingPaint
   end
   object edIP: TEdit
     Left = 24
-    Top = 25
+    Top = 8
     Width = 300
-    Height = 32
+    Height = 44
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -20
+    Font.Height = -30
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
@@ -37,9 +37,9 @@ object Form1: TForm1
   end
   object lbEvents: TListBox
     Left = 24
-    Top = 448
+    Top = 383
     Width = 681
-    Height = 240
+    Height = 305
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
     Font.Height = -13
@@ -50,10 +50,10 @@ object Form1: TForm1
     TabOrder = 1
   end
   object btnStartPing: TButton
-    Left = 424
+    Left = 344
     Top = 8
     Width = 137
-    Height = 49
+    Height = 61
     Caption = 'StartPing'
     TabOrder = 2
     OnClick = btnStartPingClick
@@ -77,10 +77,28 @@ object Form1: TForm1
         Width = 50
       end>
   end
+  object btnSave2File: TButton
+    Left = 504
+    Top = 8
+    Width = 209
+    Height = 25
+    Caption = 'Save To File'
+    TabOrder = 4
+    OnClick = btnSave2FileClick
+  end
+  object btnLoad4File: TButton
+    Left = 504
+    Top = 40
+    Width = 209
+    Height = 25
+    Caption = 'Load From File'
+    TabOrder = 5
+    OnClick = btnLoad4FileClick
+  end
   object TimerPing: TTimer
     OnTimer = TimerPingTimeout
-    Left = 576
-    Top = 24
+    Left = 696
+    Top = 464
   end
   object icmpClient: TIdIcmpClient
     OnStatus = IdcmpClientStatus
@@ -88,12 +106,12 @@ object Form1: TForm1
     ProtocolIPv6 = 58
     IPVersion = Id_IPv4
     OnReply = IdcmpClientReply
-    Left = 360
-    Top = 24
+    Left = 696
+    Top = 400
   end
   object TimerMostrar: TTimer
     OnTimer = TimerMostrarTimeout
-    Left = 672
-    Top = 24
+    Left = 696
+    Top = 528
   end
 end
