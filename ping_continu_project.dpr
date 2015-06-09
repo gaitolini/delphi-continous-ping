@@ -2,13 +2,13 @@ program ping_continu_project;
 
 uses
   Vcl.Forms,
-  ping_continu_unit in 'ping_continu_unit.pas' {Form1};
+  ping_continu_unit in 'ping_continu_unit.pas' {frmPing};
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TfrmPing, frmPing);
   Application.Run;
 end.

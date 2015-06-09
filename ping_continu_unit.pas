@@ -1,10 +1,21 @@
 unit ping_continu_unit;
 
+// Verify continously if our network can reach a given IP
+// We send a ping packet every 5 seconds (ping timeout is 1,5 seg)
+//  and we display the results every minute
+
 // github : https://github.com/sebastianet/delphi-continous-ping
+
 // versions
 //  1.1.a 04 Juny 2015 - do ping on timeout schedule
 //  1.1.b 05 Juny 2015 - save data to file, load data from file (and display)
 //  1.1.c 05 Juny 2015 - OpenDialog to get FileName to read old data from - gracies, Pere !
+//  1.1.d 09 Juny 2015 - gravar fitxer a mitja nit.
+//  1.1.e 09 Juny 2015 - 2 parameters on command line : /BROWSE i /RUN
+
+// pending
+//  * (run time flag) immediate start - dont wait for "start" button
+//  * (run time flag) display only - disable data capture
 
 {$M+}
 
@@ -20,13 +31,14 @@ uses
 const
 
 	ksz_Id       = 'Ping Continu' ;
-	ksz_Versio   = 'v 1.1.b, 04 Juny 2015' ;
+	ksz_Versio   = 'v 1.1.d, 09 Juny 2015' ;
 	ksz_Autor    = 'Sebastia Altemir Gubankov' ;
 	ksz_Emilio   = 'sag@tinet.cat' ;
 
 	kTimeout_ICMP     = 1500 ;    // period of the timer to send a ping()
 	kTimeoutMostrar   = 60000 ;   // we update the canvas every minute
 	kTimeoutTimerPing = 5000 ;
+  kRatio            = kTimeoutMostrar div kTimeoutTimerPing ;
 	kLlindar          = 10 ;      // si de 12 pings hi ha 10 o mes ecos, then GREEN
 
 	dotsize = 10 ;
@@ -38,7 +50,7 @@ type
 
   TdayPings = array [ 0..23, 0..59 ] of integer ; // [hora, minut]
 
-  TForm1 = class(TForm)
+  TfrmPing = class(TForm)
     TimerPing: TTimer;
     edIP: TEdit;
     lbEvents: TListBox;
@@ -72,8 +84,12 @@ type
   end;
 
 var
-  Form1: TForm1;
-  iEco, iError, iTimeout : integer ;
+  frmPing: TfrmPing;
+  iEco, iError, iTimeout : integer ; // ping status counters in this period
+
+// from command line parameters or "run time flag"
+  bBrowseOnly            : boolean ; // do not ping, do not generate data, browse only : /BROWSE
+  bStartImmediate        : boolean ; // dont wait for user to click on "start" button  : /RUN
 
 
 implementation
@@ -91,7 +107,7 @@ begin
 
 //  if not bLB_Trassa_Enabled then Exit ;
 
-  with Form1.lbEvents do begin
+  with frmPing.lbEvents do begin
 
     Items.add ( dateTimeToStr ( now ) + ' ' + s ) ;
       ItemIndex := Count - 1 ; // focus on last item
@@ -103,11 +119,49 @@ begin
         Items.Delete(0);
     end;
 
-  end;
-end; // debugMsg
+  end; // with
+end; // debugMsg()
+
+procedure InitData() ;
+var
+  ho, mi : integer ;
+
+begin
+  for ho := 0 to 23 do
+    for mi := 0 to 59 do
+      frmPing.dayPings [ ho, mi ] := 0 ; // init array [ hora, minut ]
+end; // InitData()
 
 
-procedure TForm1.btnLoad4FileClick(Sender: TObject);
+procedure SaveDataToFile() ;
+// called from 2 places
+//  a) button click
+//  b) midnight
+
+var
+  fOut: TextFile;
+  szFN : string ;
+  ho, mi : integer ;
+
+begin
+
+  DateTimeToString ( szFN, 'yymmddhhnnss', now ) ; // get todays date in this format, 12 chars
+  szFN := szFN + '.cpd' ;                          // add file extension : Continous Ping Data
+  debugMsg ( '>>> Output Filename will be ('+szFN+ ').' ) ;
+
+  AssignFile( fOut, szFN ) ; // assign filename to file
+  Rewrite( fOut ) ;          // open file to write
+
+  for ho := 0 to 23 do
+    for mi := 0 to 59 do
+      WriteLn( fout, frmPing.dayPings [ ho, mi ] ) ; // write one integer per line (plus CRLF)
+
+  CloseFile( fOut ) ; // 4.320 char file in \\delphi\Ping_Continu\Win32\Debug
+
+end; // SaveDataToFile()
+
+
+procedure TfrmPing.btnLoad4FileClick(Sender: TObject);
 var
   fnIn: TextFile;
   szFN : string ;
@@ -155,35 +209,21 @@ begin
   else
     debugMsg ( '--- Input filename ('+szFN+ ') not found.' ) ;
 
-end; // btnLoad4FileClick - load data from file - selected filename
+end; // btnLoad4FileClick() - load data from file - selected filename
 
 
-procedure TForm1.btnSave2FileClick(Sender: TObject);
-var
-  fOut: TextFile;
-  szFN : string ;
-  ho, mi : integer ;
-
+procedure TfrmPing.btnSave2FileClick(Sender: TObject);
 begin
 
-  DateTimeToString ( szFN, 'yymmddhhnnss', now ) ;
-  szFN := szFN + '.cpd' ; // Continous Ping Data
-  debugMsg ( '>>> Output Filename will be ('+szFN+ ').' ) ;
+  SaveDataToFile() ; // save dayPings[h,m] to (calculated) file
 
-  AssignFile( fOut, szFN ) ; // assign filename to file
-  Rewrite( fOut ) ;          // open file to write
-
-  for ho := 0 to 23 do
-    for mi := 0 to 59 do
-      WriteLn( fout, dayPings [ ho, mi ] ) ;
-
-  CloseFile( fOut ) ; // 4.320 char file in \\delphi\Ping_Continu\Win32\Debug
-
-end; // btnSave2FileClick - write data to file - calculated filename
+end; // btnSave2FileClick() - write data to file - calculated filename
 
 
-procedure TForm1.btnStartPingClick(Sender: TObject);
-var szIP : string ;
+procedure TfrmPing.btnStartPingClick(Sender: TObject);
+var
+  szIP : string ;
+
 begin
 
   debugMsg ( 'Button Start/Stop Ping pushed.' ) ;
@@ -191,7 +231,6 @@ begin
   szIP := edIP.Text ;
   debugMsg ( 'Set IP (' + szIP + '). Timeout "Ping Msg" is (' + IntToStr( TimerPing.Interval ) +') msg.' ) ;
   icmpClient.Host := szIP ;
-  icmpClient.ReceiveTimeout := kTimeout_ICMP ;
 
   if TimerPing.Enabled then begin
     TimerPing.Enabled := false ;
@@ -205,29 +244,63 @@ begin
   TimerMostrar.Enabled := true ;
   debugMsg ( 'Timeout "Display Data" is (' + IntToStr( TimerMostrar.Interval ) +') msg.' ) ;
 
-end; // btnStartPingClick
+end; // btnStartPingClick()
 
 
-procedure TForm1.FormCreate(Sender: TObject);
+procedure TfrmPing.FormCreate(Sender: TObject);
 var
-  ho, mi : integer ;
+  i, iParCnt : integer ;
+
 begin
 
+  iParCnt := paramcount ;
+  debugMsg ( '=== Ping continu. Versio (' + ksz_Versio +'), paramCnt ('+IntToStr(iParCnt)+').' ) ;
+  if ( iParCnt > 0 ) then
+  begin
+    i := 0 ;
+    while ( i < iParCnt ) do
+    begin
+      i := i + 1 ;
+      debugMsg ( '=== Param ('+IntToStr(i)+') is ('+ paramstr(i) +').' ) ;
+    end;
+  end;
+
+// init PING() parameters
+  icmpClient.ReceiveTimeout := kTimeout_ICMP ;
+  icmpClient.Host := edIP.Text ;
+
+// init timers
   TimerPing.Enabled  := false ; // wait for button
   TimerPing.Interval := kTimeoutTimerPing ;
 
   TimerMostrar.Enabled  := false ;
   TimerMostrar.Interval := kTimeoutMostrar ;
 
-  for ho := 0 to 23 do
-    for mi := 0 to 59 do
-      dayPings [ ho, mi ] := 0 ; // init array [ hora, minut ]
-
-end;
+// init todays data we accumulate in memory
+  InitData() ; // fill up dayPings[h,m]
 
 
-procedure TForm1.pbxPingPaint(Sender: TObject);
-var m, h : integer ;
+  bBrowseOnly     := true ; // test - from /BROWSE
+  bStartImmediate := true ; // catch it from command line parameters (?) or RunTimeFlag(s)
+
+  if bBrowseOnly then // we just want to browse some data
+  begin
+    bStartImmediate := false ;
+  end;
+
+  if bStartImmediate then // we dont want to wait for customer to push "start" button - just start ping()
+  begin
+    TimerPing.Enabled := true ;
+    TimerMostrar.Enabled := true ;
+  end;
+
+end; // FormCreate()
+
+
+procedure TfrmPing.pbxPingPaint(Sender: TObject);
+var
+  m, h : integer ;
+
 begin
 
   debugMsg ( '*** PBX Paint event.' ) ;
@@ -263,18 +336,18 @@ begin
 
   end; // with PaintBox
 
-end;
+end; // pbxPingPaint()
 
 
-procedure TForm1.IdcmpClientStatus( ASender: TObject; const AStatus: TIdStatus; const AStatusText: string );
+procedure TfrmPing.IdcmpClientStatus( ASender: TObject; const AStatus: TIdStatus; const AStatusText: string );
 begin
 
   debugMsg ( '+++ Ping() Status ('+ AStatusText + ').' ) ;
 
-end; // IdcmpClientStatus
+end; // IdcmpClientStatus()
 
 
-procedure TForm1.IdcmpClientReply( ASender: TComponent; const AReplyStatus: TReplyStatus );
+procedure TfrmPing.IdcmpClientReply( ASender: TComponent; const AReplyStatus: TReplyStatus );
 var
   iSeqId, iBytesRcvd : integer ;
   szRspIP   : string ;
@@ -299,13 +372,13 @@ begin
 // S := typinfo.getenuname( system.typeinfo( tstatustype), ord(replystatus) ) );
 
   if bVerbose then debugMsg ( '+++ Ping() reply, status (' + szEnumName + ').' ) ;
-  sbPing.Panels[0].Text := TimeToStr ( now ) + '+++ Ping() reply, status ordinal (' + IntToStr( iRepQ ) + ').' ;
+  sbPing.Panels[0].Text := TimeToStr ( now ) + ' +++ Ping() reply, status ordinal (' + IntToStr( iRepQ ) + ').' ;
 
   case ( AReplyStatus.ReplyStatusType ) of  // ms-help://embarcadero.rs_xe7/Indy/IdIcmpClient_TReplyStatusTypes.html
                                             // (rsEcho, rsError, rsTimeOut, rsErrorUnreachable, rsErrorTTLExceeded);
     rsEcho : begin
       iEco := iEco + 1 ;
-      debugMsg ( '+++ Ping() reply rsECHO {'+IntToStr(iEco)+'}, seq [' + IntToStr(iSeqId) + '], bytes ['+IntToStr(iBytesRcvd)+'].' ) ;
+      debugMsg ( '+++ Ping() reply rsECHO {'+IntToStr(iEco)+'/'+IntToStr(kRatio)+'}, seq [' + IntToStr(iSeqId) + '], bytes ['+IntToStr(iBytesRcvd)+'].' ) ;
     end ;
     rsError: begin
       iError := iError + 1 ;
@@ -318,17 +391,30 @@ begin
 
   end; // case
 
-end; // IdcmpClientReply
+end; // IdcmpClientReply()
 
 
-procedure TForm1.TimerMostrarTimeout(Sender: TObject);
-var h, m : integer ;
+procedure TfrmPing.TimerMostrarTimeout(Sender: TObject);
+
+// timer to display last period results has expired.
+
+var
+  h, m : integer ;
 
 begin
 
-  debugMsg ( '*** +++ Timer mostrar resultat ultim periode a PaintBox.' ) ;
   h := HourOf ( Now ) ;   // 0..23
   m := MinuteOf ( Now ) ; // 0..59
+  debugMsg ( '*** +++ Timer mostra resultat darrer periode a PBX ['+IntToStr(h)+':'+IntToStr(m)+'].' ) ;
+
+  if ( ( h = 0 ) and ( m = 0 ) ) then
+  begin
+
+    debugMsg ( '*** +++ New Day code.' ) ;
+    SaveDataToFile() ; // save dayPings[h,m] to (calculated) file
+    InitData() ;       // fill up dayPings[h,m]
+
+  end; // h = 0 and m = 0 -> new day ha sstarted
 
   with pbxPing do begin
 
@@ -350,11 +436,15 @@ begin
   iError := 0 ;
   iTimeout := 0 ;
 
-  sbPing.Panels[1].Text := DateTimeToStr ( now ) ; // update timestamp
+  sbPing.Panels[1].Text := DateTimeToStr ( now ) ; // update timestamp on StatusBar (bottom)
 
-end;
+end; // TimerMostrarTimeout()
 
-procedure TForm1.TimerPingTimeout(Sender: TObject);
+
+procedure TfrmPing.TimerPingTimeout(Sender: TObject);
+
+// timer to send a ping packet has expired
+
 begin
 
   if bVerbose then debugMsg ( '*** +++ Timer Ping timeout - Ping() comença.' ) ;
@@ -366,6 +456,6 @@ begin
   end;
   if bVerbose then debugMsg ( '*** --- Timer Ping timeout - Ping() acaba.' ) ;
 
-end;
+end; // TimerPingTimeout()
 
 end.

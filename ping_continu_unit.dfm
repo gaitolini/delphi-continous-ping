@@ -1,9 +1,9 @@
-object Form1: TForm1
+object frmPing: TfrmPing
   Left = 0
   Top = 0
   Caption = 'Ping Continu'
   ClientHeight = 749
-  ClientWidth = 747
+  ClientWidth = 890
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -32,13 +32,13 @@ object Form1: TForm1
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
-    TabOrder = 0
+    TabOrder = 1
     Text = '91.126.241.136'
   end
   object lbEvents: TListBox
     Left = 24
     Top = 383
-    Width = 681
+    Width = 833
     Height = 305
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
@@ -47,21 +47,21 @@ object Form1: TForm1
     Font.Style = []
     ItemHeight = 13
     ParentFont = False
-    TabOrder = 1
+    TabOrder = 0
   end
   object btnStartPing: TButton
     Left = 344
     Top = 8
     Width = 137
     Height = 61
-    Caption = 'StartPing'
+    Caption = 'Start/stop Ping'
     TabOrder = 2
     OnClick = btnStartPingClick
   end
   object sbPing: TStatusBar
     Left = 0
     Top = 712
-    Width = 747
+    Width = 890
     Height = 37
     Panels = <
       item
@@ -76,6 +76,7 @@ object Form1: TForm1
         Text = 'not used yet'
         Width = 50
       end>
+    ExplicitWidth = 747
   end
   object btnSave2File: TButton
     Left = 504
@@ -97,8 +98,8 @@ object Form1: TForm1
   end
   object TimerPing: TTimer
     OnTimer = TimerPingTimeout
-    Left = 696
-    Top = 464
+    Left = 792
+    Top = 144
   end
   object icmpClient: TIdIcmpClient
     OnStatus = IdcmpClientStatus
@@ -106,17 +107,17 @@ object Form1: TForm1
     ProtocolIPv6 = 58
     IPVersion = Id_IPv4
     OnReply = IdcmpClientReply
-    Left = 696
-    Top = 400
+    Left = 792
+    Top = 80
   end
   object TimerMostrar: TTimer
     OnTimer = TimerMostrarTimeout
-    Left = 696
-    Top = 528
+    Left = 792
+    Top = 216
   end
   object opnLoadFile: TOpenDialog
     InitialDir = 'c:\Sebas\delphi\Ping_Continu\Win32\Debug'
-    Left = 696
-    Top = 584
+    Left = 792
+    Top = 288
   end
 end
